@@ -88,11 +88,6 @@
                 transform: rotateX(-100deg);
                 -webkit-mask-image: linear-gradient(black, rgba(0, 0, 0, 0) 80%);
             }
-            .bord-footer {
-                padding-top: 48px;
-                color: white;
-                z-index:1;
-            }
             @keyframes waviy {
             0%,40%,100% {
                 transform: translateY(0)
@@ -111,6 +106,14 @@
                     .search
                     .match(/type=embed/gi)) {
                 window.parent.postMessage("resize", "*");
+            }
+            function getParentValue() {
+                var ffrom = parent.document.TheForm;
+                var fto = document.TheForm;
+                for (var e = 0; e < ffrom.elements.length; ++ e) {
+                    var fld = ffrom.elements[e];
+                    fto.elements[fld.name].value = fld.value;
+                }
             }
         </script>
     </head>
@@ -140,7 +143,5 @@
             </div>
         </h1>
         <h2>Malibu</h2>
-        <div class="bord-footer">
-        </div>
     </body>
 </html>
