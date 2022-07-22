@@ -1,0 +1,147 @@
+<style>
+    #C {width: 100%; height:100%;}
+    .canvasArea {max-width:100%; height:100%; margin-bottom:30px;}
+    @media screen and (max-width:812px) 
+    {
+    .canvasArea  .box {position:relative;}
+    .canvasArea  .box span {display:block; margin-bottom:10px;}
+    .see {display:block; padding:6px 6px; font-size:15px; color:#fff; background-color:#909090; border-radius:4px; box-shadow:0 5px #15e5e5e;}
+    .see:active {background-color:#909090; box-shadow:0 5px #5e5e5e; transform:translateY(4px);}
+    .see:hover {background-color:#909090;}
+    }
+
+    @media screen and (min-width:813px)
+    {
+    .canvasArea .box {position:absolute;}
+    .canvasArea .box span {display:block; vertical-align:middle; padding:10px;}
+    .see {display:table-cell; width:146px; height:48px; font-size:24px; text-align:center; vertical-align:middle; color:#fff; background-color:#909090; border-radius:4px; box-shadow:0 5px #5e5e5e;}
+    .see:active {background-color:#909090; box-shadow:0 5px #5e5e5e; transform:translateY(4px);}
+    .see:hover {background-color:#909090;}
+    }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.1/TweenMax.min.js"></script>
+<script type="module">
+    import * as THREE from 'https://cdn.skypack.dev/three@0.128.0/build/three.module.js';
+    import { OrbitControls } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/OrbitControls.js';
+    import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
+    import { RoomEnvironment } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/environments/RoomEnvironment.js';
+	import { DRACOLoader } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/loaders/DRACOLoader.js';
+    let camera, scene, renderer, controls;
+    const canvas = document.querySelector('#C');
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    renderer = new THREE.WebGLRenderer({canvas, antialias:true,});
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.4;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    camera = new THREE.PerspectiveCamera(20, window.innerWidth/window.innerHeight, 1, 2000);
+    camera.position.set(-126.16, 36.55, -169.91);
+    const environment = new RoomEnvironment();
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xFFFFFF);
+    scene.environment = pmremGenerator.fromScene(environment).texture;
+    const BMaterial = new THREE.MeshPhysicalMaterial({color: 0xffd200, metalness: 0, envMapIntensity: 5, roughness: 0.1, transmission: 1, transparent: true, premultipliedAlpha: true});
+    const CMaterial = new THREE.MeshPhysicalMaterial({color: 0xb00000, metalness: 0, envMapIntensity: 5, roughness: 0.1, transmission: 1, transparent: true, premultipliedAlpha: true});
+    const manager = new THREE.LoadingManager();
+    manager.onStart = function (url, itemsLoaded, itemsTotal) 
+    {
+    console.log('Started loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.');
+    };
+    manager.onLoad = function () 
+    {
+    console.log('Loading complete!');
+    };
+    manager.onProgress = function (url, itemsLoaded, itemsTotal) 
+    {
+    console.log('Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.');
+    };
+    manager.onError = function (url) 
+    {
+    console.log('There was an error loading ' + url);
+    };
+    const dracoLoader = new DRACOLoader();
+    const loader = new GLTFLoader(manager);
+    loader.setDRACOLoader(dracoLoader);
+    loader.load('https://drive.google.com/uc?export=view&id=1CP7nArNvq4MfNyUvmA11tLKVTFVADVfY', function (gltf) 
+    {
+        const BuildingModel = gltf.scene.children[ 0 ];
+        BuildingModel.getObjectByName('CarBody-Glass_Orange').material = BMaterial;
+        BuildingModel.getObjectByName('CarBody-Glass_Red').material = CMaterial;
+        scene.add(gltf.scene);
+        render();
+    });
+    var framesPerSecond = 120;
+    controls = new OrbitControls(camera, canvas);
+    controls.addEventListener('change', render);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.1;
+    controls.minDistance = 10;
+    controls.maxDistance = 320;
+    controls.target.set(0.52, -3.14, -15.74);
+    controls.maxPolarAngle = Math.PI / 2;
+    window.moveCam = function (eye_x, eye_y, eye_z, target_x, target_y, target_z)
+    {
+        TweenMax.killAll(false, true, false, false);
+        TweenMax.getTweensOf(camera.position)
+        TweenMax.to(camera.position, 1,{
+            x: eye_x, 
+            y: eye_y, 
+            z: eye_z,
+	        ease:Power2.easeInOut
+        }); 
+        TweenMax.getTweensOf(controls.target)    
+        TweenMax.to(controls.target, 1,{
+            x: target_x, 
+            y: target_y, 
+            z: target_z,
+	        ease:Power2.easeInOut
+        }); 
+    }
+    function resizeRendererToDisplaySize(renderer) 
+    {
+        const Max_width = 812;
+        const needResize = canvas.width !== width || canvas.height !== height;
+        if (needResize) 
+        {
+            if (width > Max_width)
+            {
+            renderer.setSize(width, height, true);
+            renderer.setPixelRatio(canvas.devicePixelRatio);
+            } else {
+            renderer.setSize(width, height, true);
+            renderer.setPixelRatio(canvas.devicePixelRatio);
+            }
+        }
+        return needResize;
+    }
+    function render() 
+    {
+        if (resizeRendererToDisplaySize(renderer)) 
+        {
+            camera.aspect = canvas.clientWidth / canvas.clientHeight;
+            camera.updateProjectionMatrix();
+        }
+        resizeRendererToDisplaySize(renderer);
+        renderer.render(scene, camera);
+    }
+    var animate = function () 
+    {
+        setTimeout(function() 
+        {
+        requestAnimationFrame(animate); 
+        }, 1000 / framesPerSecond);
+        renderer.render(scene,camera);
+        controls.update();
+    };
+    animate();
+</script>
+
+<div class="canvasArea">
+    <div class="box">
+        <span><div class="see" onclick="moveCam(5.93, 18.31, 22.34, -10.36, 3.25, -29.56)">운전석</div></span>
+        <span><div class="see" onclick="moveCam(147.40, 1.42, -40.21, 0.38, -0.13, -39.28)">측면</div></span>
+        <span><div class="see" onclick="moveCam(44.49, 20.22, 178.41, -3.78, -6.55, -36.23)">후면</div></span>
+    </div>
+    <canvas id="C" tabindex="0"></canvas>
+</div>
